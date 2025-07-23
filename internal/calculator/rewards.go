@@ -26,9 +26,13 @@ func CalculateRewards(state *types.NetworkState, participationRate float64) *typ
     proposalsPerEpoch := proposerProbability
     proposalsPerYear := proposalsPerEpoch * float64(config.EPOCHS_PER_YEAR)
     
-    // Average proposer reward per block (simplified)
-    avgProposerReward := float64(baseReward) * float64(config.PROPOSER_WEIGHT) / 
-                        float64(config.WEIGHT_DENOMINATOR)
+    // Calculate realistic proposer reward including attestation inclusion
+    attestationInclusionReward := CalculateAttestationInclusionReward(state, participationRate)
+    estimatedAttestationsPerBlock := EstimateAttestationsPerBlock(state)
+    inclusionEffectivenessRate := CalculateInclusionEffectivenessRate(participationRate)
+    
+    // Average proposer reward per block (with attestation inclusion)
+    avgProposerReward := float64(attestationInclusionReward)
     proposerRewardPerEpoch := avgProposerReward * proposerProbability
     
     // Calculate base annual rewards (at 100% participation)
@@ -81,6 +85,11 @@ func CalculateRewards(state *types.NetworkState, participationRate float64) *typ
         AvgProposerRewardPerBlock: avgProposerReward,
         ProposerRewardPerEpoch:    proposerRewardPerEpoch,
         
+        // Attestation inclusion details
+        EstimatedAttestationsPerBlock: estimatedAttestationsPerBlock,
+        AttestationInclusionReward:    attestationInclusionReward,
+        InclusionEffectivenessRate:    inclusionEffectivenessRate,
+        
         // Annual projections
         AttestationRewardsAnnual: attestationAnnual,
         ProposerRewardsAnnual:    proposerAnnual,
@@ -114,6 +123,68 @@ func GetBaseReward(state *types.NetworkState, validatorIndex int) uint64 {
 func GetBaseRewardPerIncrement(state *types.NetworkState) uint64 {
     return config.EFFECTIVE_BALANCE_INCREMENT * config.BASE_REWARD_FACTOR / 
            IntegerSquareRoot(state.TotalActiveBalance) / config.BASE_REWARDS_PER_EPOCH
+}
+
+// EstimateAttestationsPerBlock estimates how many attestations can fit in a block
+func EstimateAttestationsPerBlock(state *types.NetworkState) float64 {
+    validatorCount := float64(len(state.Validators))
+    
+    // Attestations come from validators in previous epochs
+    // Each epoch has 32 slots, so we get attestations from ~32 slots worth of validators
+    // But blocks have size limits, so we can't include all attestations
+    
+    // Conservative estimate: ~60% of validator attestations can be included per block
+    // This accounts for:
+    // - Block size limits
+    // - Some attestations being too old
+    // - Network propagation delays
+    maxIncludableRate := 0.6
+    
+    // Attestations per slot = validators / slots_per_epoch
+    attestationsPerSlot := validatorCount / float64(config.SLOTS_PER_EPOCH)
+    
+    // Estimate attestations from multiple previous slots that can be included
+    slotsToInclude := 8.0 // Conservative estimate of slots we can include from
+    
+    estimatedAttestations := attestationsPerSlot * slotsToInclude * maxIncludableRate
+    
+    return estimatedAttestations
+}
+
+// CalculateAttestationInclusionReward calculates rewards for including attestations in a block
+func CalculateAttestationInclusionReward(state *types.NetworkState, participationRate float64) uint64 {
+    baseRewardIncrement := GetBaseRewardPerIncrement(state)
+    estimatedAttestations := EstimateAttestationsPerBlock(state)
+    
+    // Each attestation has 3 components: source, target, head
+    // Proposer gets reward for each component included
+    avgComponentsPerAttestation := 2.8 // Account for some missed/late votes
+    
+    // Apply participation rate - not all validators are active
+    effectiveAttestations := estimatedAttestations * participationRate
+    
+    // Apply inclusion effectiveness - some attestations are late or missed
+    inclusionEffectiveness := 0.9 // 90% effectiveness rate
+    finalAttestations := effectiveAttestations * inclusionEffectiveness
+    
+    // Calculate total proposer reward
+    // Proposer gets 1/PROPOSER_REWARD_QUOTIENT of the attestation reward
+    proposerRewardPerComponent := baseRewardIncrement / config.PROPOSER_REWARD_QUOTIENT
+    totalInclusionReward := uint64(finalAttestations * avgComponentsPerAttestation) * proposerRewardPerComponent
+    
+    return totalInclusionReward
+}
+
+// CalculateInclusionEffectivenessRate calculates the effective inclusion rate
+func CalculateInclusionEffectivenessRate(participationRate float64) float64 {
+    // Base effectiveness of 90% (some attestations are late or missed)
+    baseEffectiveness := 0.9
+    
+    // Lower participation means less competition for inclusion, slightly higher effectiveness
+    // But also means more empty slots, so balance these effects
+    participationAdjustment := 0.95 + (participationRate-0.95)*0.5
+    
+    return baseEffectiveness * participationAdjustment
 }
 
 // CalculateAttestationReward computes reward for a single attestation

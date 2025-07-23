@@ -59,6 +59,11 @@ type RewardResults struct {
     AvgProposerRewardPerBlock float64 `json:"avg_proposer_reward_per_block"`
     ProposerRewardPerEpoch    float64 `json:"proposer_reward_per_epoch"`
     
+    // Attestation inclusion details
+    EstimatedAttestationsPerBlock float64 `json:"estimated_attestations_per_block"`
+    AttestationInclusionReward    uint64  `json:"attestation_inclusion_reward_per_block"`
+    InclusionEffectivenessRate    float64 `json:"inclusion_effectiveness_rate"`
+    
     // Annual projections
     AttestationRewardsAnnual  float64 `json:"attestation_rewards_annual"`
     ProposerRewardsAnnual     float64 `json:"proposer_rewards_annual"`
