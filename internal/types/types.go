@@ -69,6 +69,13 @@ type RewardResults struct {
     DailyRewards   float64 `json:"daily_rewards"`
     WeeklyRewards  float64 `json:"weekly_rewards"`
     MonthlyRewards float64 `json:"monthly_rewards"`
+    
+    // Participation economics
+    ParticipationMultiplier float64 `json:"participation_multiplier"`
+    BaseAPY                 float64 `json:"base_apy_at_100_percent"`
+    EffectiveAPY            float64 `json:"effective_apy_with_boost"`
+    InactivityLeakActive    bool    `json:"inactivity_leak_active"`
+    NetworkHealthWarning    string  `json:"network_health_warning,omitempty"`
 }
 
 // PenaltyResults contains penalty calculations

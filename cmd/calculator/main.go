@@ -24,6 +24,7 @@ var (
     showPenalties    bool
     inactivityEpochs int
     slashingCount    int
+    compareParticipation bool
 )
 
 func init() {
@@ -35,14 +36,15 @@ func init() {
     flag.BoolVarP(&showPenalties, "penalties", "", false, "Show penalty calculations")
     flag.IntVarP(&inactivityEpochs, "inactivity", "i", 0, "Epochs of inactivity for penalty calculation")
     flag.IntVarP(&slashingCount, "slashing", "s", 0, "Number of validators slashed together")
+    flag.BoolVarP(&compareParticipation, "compare-participation", "", false, "Compare rewards at different participation rates")
 }
 
 func main() {
     flag.Parse()
 
     // Validate inputs
-    if validatorCount == 0 && compare == "" {
-        fmt.Println("Error: Please specify validator count with -v or use -c for comparison")
+    if validatorCount == 0 && compare == "" && !compareParticipation {
+        fmt.Println("Error: Please specify validator count with -v, use -c for comparison, or use --compare-participation")
         flag.Usage()
         os.Exit(1)
     }
@@ -55,6 +57,15 @@ func main() {
     // Handle comparison mode
     if compare != "" {
         handleComparison(compare, participation)
+        return
+    }
+    
+    // Handle participation comparison mode
+    if compareParticipation {
+        if validatorCount == 0 {
+            validatorCount = 10000 // Default for participation comparison
+        }
+        compareParticipationRates(validatorCount)
         return
     }
 
@@ -134,6 +145,55 @@ func handleComparison(compareStr string, participation float64) {
     fmt.Println()
 }
 
+func compareParticipationRates(validatorCount int) {
+    header := color.New(color.FgCyan, color.Bold)
+    header.Println("\n=== Participation Rate Impact Analysis ===")
+    
+    fmt.Printf("\nValidator Count: %s\n\n", formatNumber(uint64(validatorCount)))
+    
+    // Create network state once
+    state := createNetworkState(validatorCount)
+    
+    // Table header
+    fmt.Printf("%-20s %-15s %-15s %-20s %-15s %-25s\n", 
+        "Participation Rate", "Multiplier", "Base APY %", "Effective APY %", 
+        "Annual ETH", "Network Status")
+    fmt.Println(strings.Repeat("-", 110))
+    
+    // Compare different participation rates
+    participationRates := []float64{1.0, 0.95, 0.9, 0.8, 0.7, 0.6667, 0.6, 0.5, 0.4, 0.3333}
+    
+    for _, rate := range participationRates {
+        results := calculator.CalculateRewards(state, rate)
+        
+        statusColor := color.New(color.FgGreen)
+        status := "Healthy"
+        
+        if rate < 0.3333 {
+            statusColor = color.New(color.FgRed, color.Bold)
+            status = "CRITICAL - No finality"
+        } else if rate < 0.6667 {
+            statusColor = color.New(color.FgRed)
+            status = "Inactivity leak active"
+        } else if rate < 0.8 {
+            statusColor = color.New(color.FgYellow)
+            status = "Reduced security"
+        }
+        
+        fmt.Printf("%-20s %-15s %-15.2f%% %-20.2f%% %-15.6f ",
+            fmt.Sprintf("%.1f%%", rate*100),
+            fmt.Sprintf("%.2fx", results.ParticipationMultiplier),
+            results.BaseAPY,
+            results.EffectiveAPY,
+            results.TotalAnnualRewards/1e9)
+        
+        statusColor.Printf("%-25s\n", status)
+    }
+    
+    fmt.Println("\nNOTE: This model shows how active validators benefit from others being offline.")
+    fmt.Println("      At low participation rates, inactivity penalties and network instability become significant factors.")
+}
+
 func outputFormatted(results *types.RewardResults, state *types.NetworkState, detailed bool) {
     header := color.New(color.FgCyan, color.Bold)
     subheader := color.New(color.FgYellow, color.Bold)
@@ -175,6 +235,18 @@ func outputFormatted(results *types.RewardResults, state *types.NetworkState, de
         fmt.Printf("- Expected Proposals per Year: %.2f\n", results.ExpectedProposalsPerYear)
         fmt.Printf("- Average Proposer Reward per Block: %s Gwei\n", 
             formatNumber(uint64(results.AvgProposerRewardPerBlock)))
+    }
+    
+    // Participation Economics
+    if results.ParticipationRate < 1.0 {
+        subheader.Println("\nParticipation Economics:")
+        fmt.Printf("- Participation Multiplier: %.2fx\n", results.ParticipationMultiplier)
+        fmt.Printf("- Base APY (at 100%% participation): %.2f%%\n", results.BaseAPY)
+        fmt.Printf("- Effective APY (with boost): %.2f%%\n", results.EffectiveAPY)
+        if results.NetworkHealthWarning != "" {
+            warningColor := color.New(color.FgRed, color.Bold)
+            warningColor.Printf("- %s\n", results.NetworkHealthWarning)
+        }
     }
     
     // Annual Rewards

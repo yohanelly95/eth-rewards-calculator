@@ -31,13 +31,33 @@ func CalculateRewards(state *types.NetworkState, participationRate float64) *typ
                         float64(config.WEIGHT_DENOMINATOR)
     proposerRewardPerEpoch := avgProposerReward * proposerProbability
     
-    // Annual calculations with participation rate
-    attestationAnnual := float64(attestationReward) * float64(config.EPOCHS_PER_YEAR) * participationRate
-    proposerAnnual := proposerRewardPerEpoch * float64(config.EPOCHS_PER_YEAR) * participationRate
+    // Calculate base annual rewards (at 100% participation)
+    baseAttestationAnnual := float64(attestationReward) * float64(config.EPOCHS_PER_YEAR)
+    baseProposerAnnual := proposerRewardPerEpoch * float64(config.EPOCHS_PER_YEAR)
+    baseTotalAnnual := baseAttestationAnnual + baseProposerAnnual
+    baseAPY := (baseTotalAnnual / float64(config.MAX_EFFECTIVE_BALANCE)) * 100
+    
+    // Apply participation economics - active validators get higher rewards when participation is low
+    participationMultiplier := 1.0 / participationRate
+    
+    // Effective rewards for active validators
+    attestationAnnual := baseAttestationAnnual * participationMultiplier
+    proposerAnnual := baseProposerAnnual * participationMultiplier
     totalAnnual := attestationAnnual + proposerAnnual
     
-    // APY calculation
-    apy := (totalAnnual / float64(config.MAX_EFFECTIVE_BALANCE)) * 100
+    // Effective APY with participation boost
+    effectiveAPY := (totalAnnual / float64(config.MAX_EFFECTIVE_BALANCE)) * 100
+    
+    // Check for inactivity leak conditions
+    inactivityLeakActive := participationRate < 0.6667
+    networkHealthWarning := ""
+    if participationRate < 0.3333 {
+        networkHealthWarning = "CRITICAL: Network participation below 33.33% - chain cannot finalize"
+    } else if participationRate < 0.6667 {
+        networkHealthWarning = "WARNING: Network participation below 66.67% - inactivity leak active"
+    } else if participationRate < 0.8 {
+        networkHealthWarning = "CAUTION: Network participation below 80% - reduced security"
+    }
     
     return &types.RewardResults{
         // Input parameters
@@ -65,12 +85,19 @@ func CalculateRewards(state *types.NetworkState, participationRate float64) *typ
         AttestationRewardsAnnual: attestationAnnual,
         ProposerRewardsAnnual:    proposerAnnual,
         TotalAnnualRewards:       totalAnnual,
-        APY:                      apy,
+        APY:                      effectiveAPY,
         
         // Time-based projections
         DailyRewards:   totalAnnual / 365.25,
         WeeklyRewards:  totalAnnual / 52.18,
         MonthlyRewards: totalAnnual / 12,
+        
+        // Participation economics
+        ParticipationMultiplier: participationMultiplier,
+        BaseAPY:                baseAPY,
+        EffectiveAPY:           effectiveAPY,
+        InactivityLeakActive:   inactivityLeakActive,
+        NetworkHealthWarning:   networkHealthWarning,
     }
 }
 
