@@ -110,19 +110,20 @@ func CalculateRewards(state *types.NetworkState, participationRate float64) *typ
     }
 }
 
-// GetBaseReward calculates the base reward for a validator
+// GetBaseReward calculates the base reward for a validator using Electra formula (Altair+)
 func GetBaseReward(state *types.NetworkState, validatorIndex int) uint64 {
     totalBalance := state.TotalActiveBalance
     effectiveBalance := state.Validators[validatorIndex].EffectiveBalance
     
+    // Electra formula: removes division by BASE_REWARDS_PER_EPOCH (used in Phase 0)
     return effectiveBalance * config.BASE_REWARD_FACTOR / 
-           IntegerSquareRoot(totalBalance) / config.BASE_REWARDS_PER_EPOCH
+           IntegerSquareRoot(totalBalance)
 }
 
-// GetBaseRewardPerIncrement calculates base reward per increment
+// GetBaseRewardPerIncrement calculates base reward per increment using Electra formula (Altair+)
 func GetBaseRewardPerIncrement(state *types.NetworkState) uint64 {
     return config.EFFECTIVE_BALANCE_INCREMENT * config.BASE_REWARD_FACTOR / 
-           IntegerSquareRoot(state.TotalActiveBalance) / config.BASE_REWARDS_PER_EPOCH
+           IntegerSquareRoot(state.TotalActiveBalance)
 }
 
 // EstimateAttestationsPerBlock estimates how many attestations can fit in a block
