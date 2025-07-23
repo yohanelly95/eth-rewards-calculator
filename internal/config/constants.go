@@ -3,7 +3,7 @@ package config
 // Reward and penalty constants from Ethereum mainnet
 const (
     // Base parameters
-    BASE_REWARD_FACTOR             = 64
+    BASE_REWARD_FACTOR             = 32
     BASE_REWARDS_PER_EPOCH         = 4
     PROPOSER_REWARD_QUOTIENT       = 8
     WHISTLEBLOWER_REWARD_QUOTIENT  = 512
@@ -26,12 +26,12 @@ const (
     INACTIVITY_SCORE_RECOVERY_RATE = 16
     
     // Participation flag weights
-    TIMELY_SOURCE_WEIGHT = 14
-    TIMELY_TARGET_WEIGHT = 26
-    TIMELY_HEAD_WEIGHT   = 14
-    SYNC_REWARD_WEIGHT   = 2
-    PROPOSER_WEIGHT      = 8
-    WEIGHT_DENOMINATOR   = 64
+    TIMELY_SOURCE_WEIGHT = 7
+    TIMELY_TARGET_WEIGHT = 13
+    TIMELY_HEAD_WEIGHT   = 7
+    SYNC_REWARD_WEIGHT   = 1
+    PROPOSER_WEIGHT      = 4
+    WEIGHT_DENOMINATOR   = 32
     
     // Sync committee
     SYNC_COMMITTEE_SIZE                   = 512
@@ -44,12 +44,20 @@ const (
     EJECTION_BALANCE           = 16000000000 // 16 ETH in Gwei
     
     // Time parameters
-    SLOTS_PER_EPOCH                  = 32
-    EPOCHS_PER_YEAR                  = 82180 // 365.25 * 225
-    EPOCHS_PER_DAY                   = 225
-    EPOCHS_PER_WEEK                  = 1575
-    EPOCHS_PER_MONTH                 = 6848
-    SECONDS_PER_SLOT                 = 12
+    // SLOTS_PER_EPOCH                  = 32
+    // EPOCHS_PER_YEAR                  = 82180 // 365.25 * 225
+    // EPOCHS_PER_DAY                   = 225
+    // EPOCHS_PER_WEEK                  = 1575
+    // EPOCHS_PER_MONTH                 = 6848
+    // SECONDS_PER_SLOT                 = 12
+    // MIN_ATTESTATION_INCLUSION_DELAY  = 1
+
+	SLOTS_PER_EPOCH                  = 32
+    EPOCHS_PER_YEAR                  = 98618 // 365.25 * 270
+    EPOCHS_PER_DAY                   = 270
+    EPOCHS_PER_WEEK                  = 1890
+    EPOCHS_PER_MONTH                 = 8219
+    SECONDS_PER_SLOT                 = 10
     MIN_ATTESTATION_INCLUSION_DELAY  = 1
     
     // Fork versions (for reference)
