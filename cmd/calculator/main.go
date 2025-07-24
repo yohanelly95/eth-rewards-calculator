@@ -235,6 +235,12 @@ func outputFormatted(results *types.RewardResults, state *types.NetworkState, de
         fmt.Printf("- Expected Proposals per Year: %.2f\n", results.ExpectedProposalsPerYear)
         fmt.Printf("- Average Proposer Reward per Block: %s Gwei\n", 
             formatNumber(uint64(results.AvgProposerRewardPerBlock)))
+        
+        subheader.Println("\nAttestation Inclusion Details:")
+        fmt.Printf("- Estimated Attestations per Block: %.0f\n", results.EstimatedAttestationsPerBlock)
+        fmt.Printf("- Attestation Inclusion Reward: %s Gwei\n", 
+            formatNumber(results.AttestationInclusionReward))
+        fmt.Printf("- Inclusion Effectiveness Rate: %.1f%%\n", results.InclusionEffectivenessRate*100)
     }
     
     // Participation Economics
