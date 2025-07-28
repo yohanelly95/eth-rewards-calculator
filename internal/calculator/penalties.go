@@ -16,6 +16,7 @@ func CalculatePenalties(state *types.NetworkState, validatorIndex int,
     }
     
     // Calculate penalties for missed attestation components
+    // Important: In Ethereum consensus, there is NO penalty for missed head votes
     if !correctSource {
         results.SourcePenalty = baseReward * config.TIMELY_SOURCE_WEIGHT / config.WEIGHT_DENOMINATOR
     }
@@ -23,7 +24,8 @@ func CalculatePenalties(state *types.NetworkState, validatorIndex int,
         results.TargetPenalty = baseReward * config.TIMELY_TARGET_WEIGHT / config.WEIGHT_DENOMINATOR
     }
     if !correctHead {
-        results.HeadPenalty = baseReward * config.TIMELY_HEAD_WEIGHT / config.WEIGHT_DENOMINATOR
+        // No penalty for missed head vote - only miss the reward
+        results.HeadPenalty = 0
     }
     
     results.TotalAttestationPenalty = results.SourcePenalty + results.TargetPenalty + results.HeadPenalty
