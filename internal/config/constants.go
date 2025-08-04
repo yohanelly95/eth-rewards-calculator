@@ -3,7 +3,7 @@ package config
 // Reward and penalty constants from Ethereum mainnet
 const (
     // Base parameters
-    BASE_REWARD_FACTOR             = 32
+    BASE_REWARD_FACTOR             = 10
     BASE_REWARDS_PER_EPOCH         = 4
     PROPOSER_REWARD_QUOTIENT       = 8
     WHISTLEBLOWER_REWARD_QUOTIENT  = 512
@@ -26,12 +26,19 @@ const (
     INACTIVITY_SCORE_RECOVERY_RATE = 16
     
     // Participation flag weights
-    TIMELY_SOURCE_WEIGHT = 7
-    TIMELY_TARGET_WEIGHT = 13
-    TIMELY_HEAD_WEIGHT   = 7
+    TIMELY_SOURCE_WEIGHT = 1
+    TIMELY_TARGET_WEIGHT = 4
+    TIMELY_HEAD_WEIGHT   = 1
     SYNC_REWARD_WEIGHT   = 1
-    PROPOSER_WEIGHT      = 4
-    WEIGHT_DENOMINATOR   = 32
+    PROPOSER_WEIGHT      = 3
+    WEIGHT_DENOMINATOR   = 10
+
+	// TIMELY_SOURCE_WEIGHT = 14
+    // TIMELY_TARGET_WEIGHT = 26
+    // TIMELY_HEAD_WEIGHT   = 14
+    // SYNC_REWARD_WEIGHT   = 2
+    // PROPOSER_WEIGHT      = 8
+    // WEIGHT_DENOMINATOR   = 64
     
     // Sync committee
     SYNC_COMMITTEE_SIZE                   = 512
