@@ -253,13 +253,6 @@ eth-rewards-calculator/
 └── README.md           # This file
 ```
 
-### Adding New Features
-
-1. Update types in `internal/types/types.go`
-2. Implement calculations in `internal/calculator/`
-3. Add command-line flags in `cmd/calculator/main.go`
-4. Update this README
-
 ## Notes
 
 - All calculations use Gwei (1 ETH = 1e9 Gwei) internally

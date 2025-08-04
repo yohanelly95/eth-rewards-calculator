@@ -280,12 +280,29 @@ func showPenaltyExamples(state *types.NetworkState) {
     
     // Missed attestation
     penalties := calculator.CalculatePenalties(state, validatorIndex, false, false, false)
-    subheader.Println("\nMissed Attestation Penalties:")
+    subheader.Println("\nMissed Attestation (Offline Validator):")
     fmt.Printf("- Source Penalty: %s Gwei\n", formatNumber(penalties.SourcePenalty))
     fmt.Printf("- Target Penalty: %s Gwei\n", formatNumber(penalties.TargetPenalty))
-    fmt.Printf("- Head Penalty: %s Gwei\n", formatNumber(penalties.HeadPenalty))
-    fmt.Printf("- Total per Epoch: %s Gwei\n", formatNumber(penalties.TotalAttestationPenalty))
-    fmt.Printf("- Daily Cost: %.6f ETH\n", float64(penalties.TotalAttestationPenalty*225)/1e9)
+    fmt.Printf("- Head Penalty: %s Gwei (no penalty, only missed reward)\n", formatNumber(penalties.HeadPenalty))
+    fmt.Printf("- Total Penalties per Epoch: %s Gwei\n", formatNumber(penalties.TotalAttestationPenalty))
+    
+    // Calculate what rewards would have been earned if active
+    baseReward := calculator.GetBaseReward(state, validatorIndex)
+    sourceReward := baseReward * config.TIMELY_SOURCE_WEIGHT / config.WEIGHT_DENOMINATOR
+    targetReward := baseReward * config.TIMELY_TARGET_WEIGHT / config.WEIGHT_DENOMINATOR
+    headReward := baseReward * config.TIMELY_HEAD_WEIGHT / config.WEIGHT_DENOMINATOR
+    missedRewardsPerEpoch := sourceReward + targetReward + headReward
+    
+    // Calculate total cost of being offline (penalties + missed rewards)
+    dailyMissedRewards := float64(missedRewardsPerEpoch*config.EPOCHS_PER_DAY) / 1e9
+    dailyPenalties := float64(penalties.TotalAttestationPenalty*config.EPOCHS_PER_DAY) / 1e9
+    dailyTotalCost := dailyMissedRewards + dailyPenalties
+    
+    fmt.Printf("\nDaily Impact of Being Offline:")
+    fmt.Printf("- Penalties Paid: %.6f ETH\n", dailyPenalties)
+    fmt.Printf("- Rewards Missed: %.6f ETH\n", dailyMissedRewards)
+    fmt.Printf("- Total Daily Cost: %.6f ETH\n", dailyTotalCost)
+    fmt.Printf("- Net Effect vs Active: -%.6f ETH/day\n", dailyTotalCost)
     
     // Inactivity leak
     if inactivityEpochs > 0 {
